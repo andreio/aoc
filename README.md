@@ -40,6 +40,42 @@ That's it! Now we are ready to start using the library.
 Usage
 ----
 
+To use the library we first start by injecting the `aoc` module where it is required and then configuring whatever `jQuery Widget` components we want to use.
+
+Example: `src/controller.js`
+
+    var aoc = angular.module('aoc');
+    aoc.configure('dialog', function (scope, controller) {
+        controller._onWidgetCreated(function(controller){
+            console.log(controller._getWidget());
+        });
+        return {
+            actions: {
+                default: ['open', 'destroy', 'close']
+            },
+            options: {
+                autoOpen: false
+            }
+        }
+    });
+
+After setting the options for the components we need to use, we can use the `aoc` directive with the respective `component` attributes in our HTML pages.
+
+Example: `app/index.html`
+
+    <div aoc component="dialog" id="editPerson" option-e-modal="true" option-e-resizable="false" option-e-auto-open="true" option-e-width="250">
+        <form name="person-form">
+            <fieldset>
+                <label>Name <input ng-model="person.name"></label>
+                <label>Age<input ng-model="person.age" type="text"/></label>
+                <label>Profession<input ng-model="person.profession" type="text"/></label>
+            </fieldset>
+        </form>
+    </div>
+
+
+    
+
 
 
 
