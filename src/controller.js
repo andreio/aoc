@@ -5,6 +5,9 @@
 var aoc = angular.module('aoc');
 
 aoc.configure('dialog', function (scope, controller) {
+    controller._onWidgetCreated(function(controller){
+        console.log(controller._getWidget());
+    });
     return {
         actions: {
             default: ['open', 'destroy', 'close']

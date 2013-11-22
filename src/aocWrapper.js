@@ -9,12 +9,12 @@
 
     function Config(src) {
         repair(this);
-        src&&this.extend(repair(src));
+        src && this.extend(repair(src));
     }
 
     Config.prototype.extend = function (src) {
         this.actions.default = this.actions.default.concat(src.actions.default);
-        angular.extend(this.actions.custom,src.actions.custom);
+        angular.extend(this.actions.custom, src.actions.custom);
         angular.extend(this.options, src.options);
         return this;
     };
@@ -118,7 +118,8 @@
         return [generalConfigs].concat(specificConfigs).reduce(Config.merge, Config.base());
     }
 
-    function Controller(component, element) {
+    function Controller(component, element, ioc) {
+
         this._getComponent = function () {
             return component;
         };
@@ -128,10 +129,21 @@
         this._getWidget = function () {
             return element[component]('widget');
         };
-        this._setWidgetOption = function(option,value){
-            return this._getElement()[this._getComponent()]('option',option,value);
-        }
+        this._setWidgetOption = function (option, value) {
+            return this._getElement()[this._getComponent()]('option', option, value);
+        };
 
+        var widgetCreatedCallbacks = [];
+        this._onWidgetCreated = function (fn) {
+            widgetCreatedCallbacks.push(fn);
+        };
+        var _this = this;
+        ioc.triggerWidgetCreated = function () {
+            for (var fn in widgetCreatedCallbacks) {
+                if (!widgetCreatedCallbacks.hasOwnProperty(fn))continue;
+                widgetCreatedCallbacks[fn].call(_this, _this);
+            }
+        };
     }
 
     Controller.calibrate = function (instance, scope, config) {
@@ -163,11 +175,11 @@
             };
 
         for (action in config.actions.default) {
-            if(!config.actions.default.hasOwnProperty(action))continue;
+            if (!config.actions.default.hasOwnProperty(action))continue;
             setDefaultFunction(config.actions.default[action]);
         }
         for (action in config.actions.custom) {
-            if(!config.actions.custom.hasOwnProperty(action))continue;
+            if (!config.actions.custom.hasOwnProperty(action))continue;
             setCustomAction(action);
         }
     };
@@ -177,12 +189,14 @@
             link: function (scope, element, attr) {
                 var component = attr.component,
                     id = attr.id,
-                    controller = new Controller(component, element),
+                    trigger = {},
+                    controller = new Controller(component, element,trigger),
                     config = extractConfig(element, component, scope, controller),
                     options = angular.extend(config.options, extractOptions(scope, attr));
                 $(element)[component](options);
                 Controller.calibrate(controller, scope, config);
                 registerComponent(component, id, scope.$parent, controller);
+                trigger.triggerWidgetCreated();
 
             }
         }
