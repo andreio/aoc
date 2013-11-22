@@ -73,6 +73,42 @@ Example: `app/index.html`
         </form>
     </div>
 
+API
+----
+
+The entry point for using the functionality of this library is the `configure()` function in the `aoc` angular module.
+The definition of the function is:
+
+    function configure(componentName, options, selector)
+
+`componentName`
+-
+The name of the jQuery Widget.
+
+`options` 
+-
+Options object to be passed to the jQuery Widget constructor.
+
+Format:
+
+    {
+        actions: 
+        {
+            default: [],
+            custom: {}
+        },
+        options: 
+        {
+        }
+    }
+
+- `default`: Array of  
+
+`selector`
+-
+specifies that the options should only be applied to elements who match the selector.
+
+
 
     
 
