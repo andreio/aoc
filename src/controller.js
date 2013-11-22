@@ -38,7 +38,7 @@ aoc.configure('dialog',function(scope,controller){
             ]
         }
     }
-},'#alert');
+},'#personDialog');
 
 aoc.configure('dialog',function(){
 

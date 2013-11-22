@@ -7,7 +7,7 @@
 </head>
 <body ng-app="app" ng-controller="app">
 
-<div aoc component="dialog" id="alert" option-e-modal="true" option-e-resizable="false" option-e-auto-open="true" option-e-width="250">
+<div aoc component="dialog" id="personDialog" option-e-modal="true" option-e-resizable="false" option-e-auto-open="true" option-e-width="250">
     <form name="person-form">
         <fieldset>
             <label>Name <input ng-model="person.name"></label>
@@ -17,8 +17,7 @@
     </form>
 </div>
 
-
-<div aoc component="dialog" class="custom" id="custom" option-f-close="log()" option-e-modal="true" option-e-resizable="false" option-e-width="600">
+<div aoc component="dialog" class="custom" id="custom" option-e-close="log()" option-e-modal="true" option-e-resizable="false" option-e-width="600">
     <div aoc component="tabs" id="tabs">
         <ul>
             <li><a href="#fragment1">One</a></li>

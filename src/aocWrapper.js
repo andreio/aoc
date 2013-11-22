@@ -72,8 +72,7 @@
 
     function extractOptions(scope, attrs) {
         var ePattern = /^optionE[A-Z][A-Za-z]*$/,
-            fPattern = /^optionF[A-Z][A-Za-z]*$/,
-            argPattern = /^option(E|F)/,
+            argPattern = /^optionE/,
             optionPattern = /^option/,
             allPattern = /^option[A-Z][a-zA-Z]*$/,
             options = {},
@@ -87,8 +86,6 @@
         for (attr in attrs) {
             if (!attrs.hasOwnProperty(attr) || !allPattern.test(attr))continue;
             if (ePattern.test(attr))
-                options[name(argPattern, attr)] = scope.$eval(attrs[attr]);
-            else if (fPattern.test(attr))
                 options[name(argPattern, attr)] =
                     (function (atr) {
                         return function () {
@@ -103,9 +100,11 @@
 
 
     function registerComponent(component, id, container, controller) {
-        var comps = container.components || (container.components = {});
-        var comp = comps[component] || (comps[component] = {});
-        comp[id] = controller;
+        if (!container.hasOwnProperty('components'))
+            container.components = {};
+        if (!container.components.hasOwnProperty(component))
+            container.components[component] = {};
+        container.components[component][id] = controller;
     }
 
     function extractConfig(element, component, scope, controller) {
@@ -184,20 +183,20 @@
         }
     };
 
-    aoc.directive('aoc', function () {
+    aoc.directive('aoc', function ($compile) {
         return {
+            scope: true,
             link: function (scope, element, attr) {
                 var component = attr.component,
                     id = attr.id,
                     trigger = {},
-                    controller = new Controller(component, element,trigger),
+                    controller = new Controller(component, element, trigger),
                     config = extractConfig(element, component, scope, controller),
                     options = angular.extend(config.options, extractOptions(scope, attr));
                 $(element)[component](options);
                 Controller.calibrate(controller, scope, config);
                 registerComponent(component, id, scope.$parent, controller);
                 trigger.triggerWidgetCreated();
-
             }
         }
     });
