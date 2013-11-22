@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="../bower_components/jquery-ui/themes/ui-lightness/jquery-ui.css">
+
+</head>
+<body ng-app="app" ng-controller="app">
+
+<div aoc component="dialog" id="alert" option-e-modal="true" option-e-resizable="false" option-e-auto-open="true" option-e-width="250">
+    <form name="person-form">
+        <fieldset>
+            <label>Name <input ng-model="person.name"></label>
+            <label>Age<input ng-model="person.age" type="text"/></label>
+            <label>Profession<input ng-model="person.profession" type="text"/></label>
+        </fieldset>
+    </form>
+</div>
+
+<div aoc component="dialog" class="custom" id="custom" option-f-close="log()" option-e-modal="true" option-e-resizable="false" option-e-width="600">
+    <div aoc component="tabs" id="tabs">
+        <ul>
+            <li><a href="#fragment1">One</a></li>
+            <li><a href="#fragment2">Two</a></li>
+        </ul>
+        <div id="fragment1">
+            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquid corporis dolorum id laboriosam odio pariatur reiciendis saepe tempora unde? Accusamus at dolor dolorem eius est iusto non similique unde voluptatem?
+        </div>
+        <div id="fragment2">
+            <strong>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ab aliquid amet culpa delectus, eius et
+                eum harum hic iste iure maxime, neque obcaecati possimus quae quasi rem repellendus sit
+                tempora!</strong>
+        </div>
+    </div>
+</div>
+
+</body>
+<script src="../bower_components/jquery/jquery.js"></script>
+<script src="../bower_components/jquery-ui/ui/jquery-ui.js"></script>
+<script src="../bower_components/angular/angular.js"></script>
+
+<script src="../src/app.js"></script>
+<script src="../src/aocWrapper.js"></script>
+<script src="../src/controller.js"></script>
+
+
+</html>
