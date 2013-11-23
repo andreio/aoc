@@ -22,7 +22,7 @@ Example: `app/index.html`
     <script src="../bower_components/jquery-ui/ui/jquery-ui.js"></script>
     <script src="../bower_components/angular/angular.js"></script>
     <script src="../src/app.js"></script>
-    <script src="../src/aocWrapper.js"></script>
+    <script src="../src/aoc.js"></script>
     <script src="../src/controller.js"></script>
     ...
 
