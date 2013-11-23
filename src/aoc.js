@@ -3,7 +3,7 @@
  * @Date: November 2013
  */
 
-(function (angular, $) {
+(function (angular) {
 
     'use strict';
 
@@ -71,12 +71,11 @@
     }
 
     function extractOptions(scope, attrs) {
-        var ePattern = /^optionE[A-Z][A-Za-z]*$/,
-            argPattern = /^optionE/,
+        var optionsPattern = /^option[A-Z][A-Za-z]*$/,
+            functionPattern = /^([^(])+\(.*\).*?$/,
             optionPattern = /^option/,
-            allPattern = /^option[A-Z][a-zA-Z]*$/,
             options = {},
-            attr;
+            attr, rAttr;
 
         function name(pattern, attr) {
             var rName = attr.replace(pattern, "");
@@ -84,15 +83,25 @@
         }
 
         for (attr in attrs) {
-            if (!attrs.hasOwnProperty(attr) || !allPattern.test(attr))continue;
-            if (ePattern.test(attr))
-                options[name(argPattern, attr)] =
+            if (!attrs.hasOwnProperty(attr) || !optionsPattern.test(attr))continue;
+            rAttr = name(optionPattern, attr);
+            if (functionPattern.test(attrs[attr]))
+                options[rAttr] =
                     (function (atr) {
                         return function () {
-                            return scope.$eval(attrs[atr]);
+                            var args = Array.prototype.slice.call(arguments),
+                                arg, argNr = 0, ret;
+                            for (arg in args)
+                                scope["$arg" + argNr++] = args[arg];
+                            ret = scope.$eval(attrs[atr]);
+                            while (argNr > -1) {
+                                delete scope["$arg" + argNr];
+                                argNr -= 1;
+                            }
+                            return ret;
                         }
                     })(attr);
-            else options[name(optionPattern, attr)] = attrs[attr];
+            else options[rAttr] = scope.$eval(attrs[attr]);
 
         }
         return options;
@@ -108,8 +117,12 @@
     }
 
     function extractConfig(element, component, scope, controller) {
-        var generalConfigs = new Config(GENERAL_CONFIGS[component].call(Function.caller, scope, controller)),
-            specificConfigs = ((SPECIFIC_CONFIGS[component] || []).map(function (c) {
+        var gConfig = GENERAL_CONFIGS[component] || function () {
+                return {}
+            },
+            sConfig = SPECIFIC_CONFIGS[component] || [],
+            generalConfigs = new Config(gConfig.call(Function.caller, scope, controller)),
+            specificConfigs = (sConfig.map(function (c) {
                 if (element.is(c.selector))
                     return new Config(c.config.call(Function.caller, scope, controller));
                 return new Config();
@@ -131,7 +144,6 @@
         this._setWidgetOption = function (option, value) {
             return this._getElement()[this._getComponent()]('option', option, value);
         };
-
         var widgetCreatedCallbacks = [];
         this._onWidgetCreated = function (fn) {
             widgetCreatedCallbacks.push(fn);
@@ -143,6 +155,7 @@
                 widgetCreatedCallbacks[fn].call(_this, _this);
             }
         };
+
     }
 
     Controller.calibrate = function (instance, scope, config) {
@@ -155,18 +168,20 @@
                 } else {
                     fn();
                 }
+            }, actionArgs = function (action, args) {
+                return [action].concat(Array.prototype.slice.call(args));
             },
-            setDefaultFunction = function (action) {
+            setDefaultAction = function (action) {
                 instance[action] = function () {
-                    var _args = Array.prototype.slice.call(arguments);
+                    var args = actionArgs(action, arguments);
                     proxyInScope(function () {
-                        instance._getElement()[instance._getComponent()].apply(instance._getElement(), [action].concat(_args));
+                        config.factory.defaultActionsInvoker(args);
                     });
                 }
             },
             setCustomAction = function (action) {
                 instance[action] = function () {
-                    var args = Array.prototype.slice.call(arguments);
+                    var args = actionArgs(action, arguments);
                     proxyInScope(function () {
                         config.actions.custom[action].apply(instance, args);
                     });
@@ -175,16 +190,18 @@
 
         for (action in config.actions.default) {
             if (!config.actions.default.hasOwnProperty(action))continue;
-            setDefaultFunction(config.actions.default[action]);
+            setDefaultAction(config.actions.default[action]);
         }
         for (action in config.actions.custom) {
             if (!config.actions.custom.hasOwnProperty(action))continue;
             setCustomAction(action);
         }
+
     };
 
     aoc.directive('aoc', function ($compile) {
         return {
+
             scope: true,
             link: function (scope, element, attr) {
                 var component = attr.component,
@@ -192,8 +209,18 @@
                     trigger = {},
                     controller = new Controller(component, element, trigger),
                     config = extractConfig(element, component, scope, controller),
-                    options = angular.extend(config.options, extractOptions(scope, attr));
-                $(element)[component](options);
+                    options = angular.extend(config.options, extractOptions(scope, attr)),
+                    jQueryWidgetFactory = {
+                        create: function () {
+                            return element[component](options);
+                        },
+                        defaultActionsInvoker: function (args) {
+                            element[component].apply(element, args);
+                        }
+                    };
+                config.factory = config.factory || jQueryWidgetFactory;
+
+                config.factory.create();
                 Controller.calibrate(controller, scope, config);
                 registerComponent(component, id, scope.$parent, controller);
                 trigger.triggerWidgetCreated();
@@ -203,4 +230,4 @@
 
     aoc.configure = configure;
 
-})(angular, jQuery);
+})(angular);
