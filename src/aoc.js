@@ -13,6 +13,7 @@
 // ********** CONFIG SECTION ************
     var configs = {};
 
+
     function Config(general) {
         this.general = general;
         this.specific = [];
@@ -86,7 +87,9 @@
                     }
                 },
                 options: {},
-                events: {},
+                events: {
+
+                },
                 createFn: function (element, controlName, options) {
                     if (!element[controlName]) {
                         console.error('defaultInvoker: invalid control name: ' + controlName + ". If this is not a jQuery Widget style component in the form of 'element['controlName'](options)' with the method accessing format'element[control](methodName,arguments)' consider setting a custom defaultInvoker function and createFn function respectively in the configuration of the control with the same control name ");
@@ -215,8 +218,8 @@
     aoc.directive('aoc', function ($compile, $injector, $timeout) {
         return{
             priority: 500,
-            require: ['?ngModel' ],
-            link: function (scope, element, attrs) {
+            require: '?ngModel',
+            link: function (scope, element, attrs, ngModelCtrl) {
                 var controls = attrs.aoc.split(' '),
                     control, externalScope = attrs.$attr.scope ? scope.$parent : scope;
                 (!externalScope.$aoc) && (externalScope.$aoc = function (selector) {
@@ -226,17 +229,26 @@
                 });
                 angular.forEach(controls, function (controlName) {
                     control = new Control(new AocConfig(scope, controlName, element, function (configFn) {
-                        return $injector.invoke(configFn, this, {scope: scope, aocCompile: function (element) {
+                        return $injector.invoke(configFn, this, {scope: scope, control: function () {
+                            return control;
+                        }, aocCompile: function (element) {
                             $compile(element)(scope);
-                        }})
+                        },element:element})
                     }));
                     (function (control) {
                         $timeout(function () {
                             Control.initControl(control);
-                        });
+                        }, 1);
                     }(control))
 
                 });
+                $timeout(function () {
+                    if (ngModelCtrl) {
+                        scope.$watch(attrs.ngModel, function (value) {
+                            element.trigger('modelChanged', value);
+                        });
+                    }
+                }, 1);
 
             }
         }
