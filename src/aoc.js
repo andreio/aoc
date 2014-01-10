@@ -1,4 +1,5 @@
 /**
+ * Angular optimized controls
  * @Author: Andrei Oprea Constantin
  * @Date: December 2013
 
