@@ -1,7 +1,7 @@
 aoc
 ===
 
-Angular optimized components
+Angular optimized controls
 
 
 Description
