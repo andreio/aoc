@@ -40,7 +40,7 @@
         if (modifier === BINDING_PREFIX)
             return '{{' + modifiedValue + '}}';
         if (modifier === FN_PREFIX)
-            return argumentedApplyInScope(scope)((function (args) {
+            return argumentedCallInScope(scope)((function (args) {
                 return scope.$eval(modifiedValue, angular.extend({}, locals, _aoc.enumerateArr(args, '$arg')));
             }));
         return scope.$eval(attrValue, locals);
@@ -101,7 +101,7 @@
     function defaultConfig() {
         return {
             actions: {
-                default: [],
+                'default': [],
                 custom: {},
                 defaultActionsInvoker: function (action, controlName, element, args) {
                     return element[controlName].apply(element, [action].concat(args));
@@ -123,7 +123,7 @@
             if (!evConfig.actions)
                 evConfig.actions = last.actions;
             else {
-                evConfig.actions.default = last.actions.default.concat(evConfig.actions.default || []);
+                evConfig.actions['default'] = last.actions['default'].concat(evConfig.actions['default'] || []);
                 evConfig.actions.custom = angular.extend(last.actions.custom, evConfig.actions.custom || {});
                 evConfig.actions.defaultActionsInvoker = evConfig.actions.defaultActionsInvoker || last.actions.defaultActionsInvoker;
             }
@@ -145,9 +145,13 @@
     }
 
 
-    function argumentedApplyInScope(scope, context) {
+    function argumentedCallInScope(scope, context) {
+        return argumentedBindInScope(_aoc.argumentizeCall, scope, context);
+    }
+
+    function argumentedBindInScope(bindFn, scope, context) {
         return function (fn, prepend, append) {
-            return _aoc.argumentizeCall(function (args) {
+            return bindFn(function (args) {
                 return applyInScope(function () {
                     return fn.apply(context, args);
                 }, scope);
@@ -155,6 +159,9 @@
         }
     }
 
+    function argumentedApplyInScope(scope, context) {
+        return argumentedBindInScope(_aoc.argumentizeApply, scope, context);
+    }
 
     function ProxyControl(control) {
         angular.forEach(control, function (fn, action) {
@@ -187,14 +194,15 @@
                         var control = (controls[controlName] = {}),
                             config = evaluateConfigs(getConfigs(controlName, el), $injector,
                                 {control: control, element: el, controlName: controlName, scope: scope}),
+                            controlCall = argumentedCallInScope(scope, control),
                             controlApply = argumentedApplyInScope(scope, control);
 
                         angular.forEach(config.events, function (event) {
-                            el.on(event.key, controlApply(event.value));
+                            el.on(event.key, controlCall(event.value));
                         });
 
-                        angular.forEach(config.actions.default, function (action) {
-                            control[action] = controlApply(config.actions.defaultActionsInvoker, [action, controlName, el]);
+                        angular.forEach(config.actions['default'], function (action) {
+                            control[action] = controlCall(config.actions.defaultActionsInvoker, [action, controlName, el]);
                         });
                         angular.forEach(config.actions.custom, function (fn, action) {
                             control[action] = controlApply(fn);
@@ -202,7 +210,8 @@
 
                         controlLocals['$' + controlName] = new ProxyControl(control);
                         allControls[id] && (allControls[id][controlName] = controlLocals['$' + controlName]);
-                        config.createFn.call(control, controlName, el, angular.extend({}, config.options, parseOptions(attrs, alias || controlName,scope, controlLocals)));
+                        config.createFn.call(control, controlName, el, angular.extend({}, config.options, parseOptions(attrs, alias || controlName, scope, controlLocals)));
+                        el.triggerHandler('controlCreated', controlName);
                     });
 
                     if (ngModel) {
@@ -211,9 +220,7 @@
                             el.trigger('modelChanged', {'newValue': newValue, 'oldValue': oldValue});
                         });
                     }
-
                     el.data('aocControls', controls);
-                    el.trigger('controlCreated');
                 }
             }
         }
@@ -263,7 +270,7 @@
             var ret = {};
             angular.forEach(obj, function (value, key) {
                 if (filter && !filter(value, key))return;
-                ret[keyModifier ? keyModifier(key) : key] = valueModifier ? valueModifier(value) : value;
+                ret[keyModifier ? keyModifier(key, value) : key] = valueModifier ? valueModifier(value, key) : value;
             });
             return ret;
         }
@@ -283,19 +290,19 @@
             });
         }
 
-        function argumentize(fn,invokeFn,context,prepend,append){
-            return function(){
+        function argumentize(fn, invokeFn, context, prepend, append) {
+            return function () {
                 var args = (prepend || []).concat([sliceArguments(arguments)]).concat(append || []);
-                return invokeFn.call(fn,context,args);
+                return invokeFn.call(fn, context, args);
             }
         }
 
-        function argumentizeApply(fn,context,prepend,append){
-            return argumentize(fn,Function.prototype.apply,context,prepend,append);
+        function argumentizeApply(fn, context, prepend, append) {
+            return argumentize(fn, Function.prototype.apply, context, prepend, append);
         }
 
         function argumentizeCall(fn, context, prepend, append) {
-            return argumentize(fn,Function.prototype.call,context,prepend,append);
+            return argumentize(fn, Function.prototype.call, context, prepend, append);
         }
 
         function sliceArguments(args) {
@@ -312,8 +319,8 @@
             flatten: flatten,
             flattenKeyValue: flattenKeyValue,
             argumentizeCall: argumentizeCall,
-            argumentizeApply:argumentizeApply,
-            argumentize:argumentize,
+            argumentizeApply: argumentizeApply,
+            argumentize: argumentize,
             sliceArguments: sliceArguments
         };
 
