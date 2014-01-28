@@ -202,7 +202,7 @@
 
                         controlLocals['$' + controlName] = new ProxyControl(control);
                         allControls[id] && (allControls[id][controlName] = controlLocals['$' + controlName]);
-                        config.createFn.call(control, controlName, el, angular.extend({}, config.options, parseOptions(attrs, alias,scope, controlLocals)));
+                        config.createFn.call(control, controlName, el, angular.extend({}, config.options, parseOptions(attrs, alias || controlName,scope, controlLocals)));
                     });
 
                     if (ngModel) {
