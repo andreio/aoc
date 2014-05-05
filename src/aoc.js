@@ -27,7 +27,7 @@
 
     'use strict';
 
-    var aoc = angular.module('aoc', [], function () {
+    var aoc = angular.module('aoc', ['aocTools'], function () {
         }),
         EVENT_PREFIX = 'aocEvent',
         AOC_PREFIX = 'aoc',
@@ -41,20 +41,20 @@
             return '{{' + modifiedValue + '}}';
         if (modifier === FN_PREFIX)
             return argumentedCallInScope(scope)((function (args) {
-                return scope.$eval(modifiedValue, angular.extend({}, locals, _aoc.enumerateArr(args, '$arg')));
+                return scope.$eval(modifiedValue, angular.extend({}, locals, enumerateArr(args, '$arg')));
             }));
         return scope.$eval(attrValue, locals);
     }
 
 
     function parseAttributes(attrs, identifier, scope, locals, valueModifier, keyModifier, filter) {
-        return _aoc.objectMapper(attrs,
+        return objectMapper(attrs,
             valueModifier || function (value) {
                 return evalAttribute(value, scope, locals);
             },
-            keyModifier || _aoc.preciseCamelReplace(identifier),
+            keyModifier || preciseCamelReplace(identifier),
             filter || function (value, key) {
-                return _aoc.startsWith(key, identifier);
+                return startsWith(key, identifier);
             });
     }
 
@@ -62,7 +62,7 @@
         return parseAttributes(attrs, AOC_PREFIX, undefined, undefined, function (value) {
             return value;
         }, undefined, function (value, key) {
-            return (!(key === AOC_PREFIX || _aoc.startsWith(key, EVENT_PREFIX)) && _aoc.startsWith(key, AOC_PREFIX));
+            return (!(key === AOC_PREFIX || startsWith(key, EVENT_PREFIX)) && startsWith(key, AOC_PREFIX));
         })
     }
 
@@ -77,19 +77,21 @@
     }
 
     var configs = {};
-    aoc.configure = function (config) {
-        angular.forEach(config, function (cfg, control) {
-            configs[control] = cfg;
-        });
-    };
 
+    aoc.service('aocConfigure', function () {
+        return function (config) {
+            angular.forEach(config, function (cfg, control) {
+                configs[control] = cfg;
+            });
+        }
+    });
 
     function getConfigs(control, element) {
         var configObj;
         if (angular.isDefined(configObj = configs[control])) {
             return angular.isFunction(configObj) ?
                 [configObj] :
-                _aoc.flattenKeyValue(configObj).filter(function (v) {
+                flattenKeyValue(configObj).filter(function (v) {
                     return v.key === 'default' || element.is(v.key);
                 }).map(function (v) {
                         return v.value;
@@ -128,7 +130,7 @@
                 evConfig.actions.defaultActionsInvoker = evConfig.actions.defaultActionsInvoker || last.actions.defaultActionsInvoker;
             }
             evConfig.options = angular.extend(last.options, evConfig.options || {});
-            evConfig.events = last.events.concat(_aoc.flattenKeyValue(evConfig.events));
+            evConfig.events = last.events.concat(flattenKeyValue(evConfig.events));
             evConfig.createFn = evConfig.createFn || last.createFn;
             return evConfig;
         }, defaultConfig());
@@ -146,7 +148,7 @@
 
 
     function argumentedCallInScope(scope, context) {
-        return argumentedBindInScope(_aoc.argumentizeCall, scope, context);
+        return argumentedBindInScope(argumentizeCall, scope, context);
     }
 
     function argumentedBindInScope(bindFn, scope, context) {
@@ -160,14 +162,14 @@
     }
 
     function argumentedApplyInScope(scope, context) {
-        return argumentedBindInScope(_aoc.argumentizeApply, scope, context);
+        return argumentedBindInScope(argumentizeApply, scope, context);
     }
 
     function ProxyControl(control) {
         angular.forEach(control, function (fn, action) {
             this[action] =
                 function () {
-                    return _aoc.sanitizeHTMLReturn(fn.apply(control, _aoc.sliceArguments(arguments)));
+                    return sanitizeHTMLReturn(fn.apply(control, sliceArguments(arguments)));
                 }
         }, this);
     }
@@ -187,7 +189,7 @@
 
 
                     angular.forEach(parseEvents(attrs, scope, controlLocals), function (fn, e) {
-                        el.on(e, _aoc.argumentizeApply(fn.apply, fn, [el]));
+                        el.on(e, argumentizeApply(fn.apply, fn, [el]));
                     });
                     angular.forEach(controlNames, function (alias, controlName) {
 
@@ -239,91 +241,88 @@
         }
     });
 
-    (function (angular, global) {
+    function camelReplace(inThisString, thisString, withThisString) {
+        var result = inThisString.replace(thisString, withThisString);
+        return  result[0].toLowerCase() + result.substring(1);
+    }
 
-        function camelReplace(inThisString, thisString, withThisString) {
-            var result = inThisString.replace(thisString, withThisString);
-            return  result[0].toLowerCase() + result.substring(1);
+    function preciseCamelReplace(thisString) {
+        return function (inThisString) {
+            return camelReplace(inThisString, thisString, '');
         }
+    }
 
-        function preciseCamelReplace(thisString) {
-            return function (inThisString) {
-                return camelReplace(inThisString, thisString, '');
-            }
+    function startsWith(str, str2) {
+        return str.indexOf(str2) == 0;
+    }
+
+    function enumerateArr(arr, key) {
+        return objectMapper(arr, null, function (i) {
+            return key + i
+        });
+    }
+
+    function sanitizeHTMLReturn(ret) {
+        return ret instanceof angular.element ? ret.text() : ret;
+    }
+
+    function objectMapper(obj, valueModifier, keyModifier, filter) {
+        var ret = {};
+        angular.forEach(obj, function (value, key) {
+            if (filter && !filter(value, key))return;
+            ret[keyModifier ? keyModifier(key, value) : key] = valueModifier ? valueModifier(value, key) : value;
+        });
+        return ret;
+    }
+
+    function flatten(obj, flatFn) {
+        var ret = [];
+        angular.forEach(obj, function (v, k) {
+            ret.push(flatFn(v, k));
+        });
+        return ret;
+    }
+
+
+    function flattenKeyValue(obj) {
+        return flatten(obj, function (v, k) {
+            return {key: k, value: v};
+        });
+    }
+
+    function argumentize(fn, invokeFn, context, prepend, append) {
+        return function () {
+            var args = (prepend || []).concat([sliceArguments(arguments)]).concat(append || []);
+            return invokeFn.call(fn, context, args);
         }
+    }
 
-        function startsWith(str, str2) {
-            return str.indexOf(str2) == 0;
-        }
+    function argumentizeApply(fn, context, prepend, append) {
+        return argumentize(fn, Function.prototype.apply, context, prepend, append);
+    }
 
-        function enumerateArr(arr, key) {
-            return objectMapper(arr, null, function (i) {
-                return key + i
-            });
-        }
+    function argumentizeCall(fn, context, prepend, append) {
+        return argumentize(fn, Function.prototype.call, context, prepend, append);
+    }
 
-        function sanitizeHTMLReturn(ret) {
-            return ret instanceof angular.element ? ret.text() : ret;
-        }
-
-        function objectMapper(obj, valueModifier, keyModifier, filter) {
-            var ret = {};
-            angular.forEach(obj, function (value, key) {
-                if (filter && !filter(value, key))return;
-                ret[keyModifier ? keyModifier(key, value) : key] = valueModifier ? valueModifier(value, key) : value;
-            });
-            return ret;
-        }
-
-        function flatten(obj, flatFn) {
-            var ret = [];
-            angular.forEach(obj, function (v, k) {
-                ret.push(flatFn(v, k));
-            });
-            return ret;
-        }
+    function sliceArguments(args) {
+        return Array.prototype.slice.call(args);
+    }
 
 
-        function flattenKeyValue(obj) {
-            return flatten(obj, function (v, k) {
-                return {key: k, value: v};
-            });
-        }
-
-        function argumentize(fn, invokeFn, context, prepend, append) {
-            return function () {
-                var args = (prepend || []).concat([sliceArguments(arguments)]).concat(append || []);
-                return invokeFn.call(fn, context, args);
-            }
-        }
-
-        function argumentizeApply(fn, context, prepend, append) {
-            return argumentize(fn, Function.prototype.apply, context, prepend, append);
-        }
-
-        function argumentizeCall(fn, context, prepend, append) {
-            return argumentize(fn, Function.prototype.call, context, prepend, append);
-        }
-
-        function sliceArguments(args) {
-            return Array.prototype.slice.call(args);
-        }
-
-        global._aoc = {
-            camelReplace: camelReplace,
-            preciseCamelReplace: preciseCamelReplace,
-            startsWith: startsWith,
-            enumerateArr: enumerateArr,
-            sanitizeHTMLReturn: sanitizeHTMLReturn,
-            objectMapper: objectMapper,
-            flatten: flatten,
-            flattenKeyValue: flattenKeyValue,
-            argumentizeCall: argumentizeCall,
-            argumentizeApply: argumentizeApply,
-            argumentize: argumentize,
-            sliceArguments: sliceArguments
-        };
-
-    })(angular, window);
+    aoc.constant('aocTools', {
+        camelReplace: camelReplace,
+        preciseCamelReplace: preciseCamelReplace,
+        startsWith: startsWith,
+        enumerateArr: enumerateArr,
+        sanitizeHTMLReturn: sanitizeHTMLReturn,
+        objectMapper: objectMapper,
+        flatten: flatten,
+        flattenKeyValue: flattenKeyValue,
+        argumentizeCall: argumentizeCall,
+        argumentizeApply: argumentizeApply,
+        argumentize: argumentize,
+        sliceArguments: sliceArguments
+    });
 
 })(angular);
