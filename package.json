@@ -1,8 +1,8 @@
 {
   "name": "aoc",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Angular Optimized Components",
-  "main": "index.js",
+  "main": "src/aoc.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
