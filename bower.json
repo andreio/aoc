@@ -1,0 +1,25 @@
+{
+  "name": "aoc",
+  "version": "0.0.2",
+  "homepage": "https://github.com/andreio/aoc",
+  "authors": [
+    "Andrei Oprea <andrewoprea2003@yahoo.com>"
+  ],
+  "description": "Angular optimized components",
+  "main": "src/aoc.js",
+  "keywords": [
+    "angular",
+    "optimized",
+    "components",
+    "jquery",
+    "bootstrap"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
