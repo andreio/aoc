@@ -27,7 +27,7 @@
 
     'use strict';
 
-    var aoc = angular.module('aoc', ['aocTools'], function () {
+    var aoc = angular.module('aoc', [], function () {
         }),
         EVENT_PREFIX = 'aocEvent',
         AOC_PREFIX = 'aoc',
