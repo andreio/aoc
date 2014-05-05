@@ -1,0 +1,26 @@
+{
+  "name": "aoc",
+  "version": "0.0.0",
+  "description": "Angular Optimized Components",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/andreio/aoc.git"
+  },
+  "keywords": [
+    "Angularjs",
+    "bootstrap",
+    "jquery",
+    "andrei",
+    "oprea"
+  ],
+  "author": "Andrei Oprea Cosntantin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/andreio/aoc/issues"
+  },
+  "homepage": "https://github.com/andreio/aoc"
+}
