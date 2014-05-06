@@ -1,5 +1,5 @@
 /**
- * Angular optimized controls 0.4
+ * Angular optimized controls 0.6
  * @Author: Andrei Oprea Constantin
  * @Date: December 2013
 
