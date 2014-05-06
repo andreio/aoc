@@ -89,7 +89,7 @@
     function getConfigs(control, element) {
         var configObj;
         if (angular.isDefined(configObj = configs[control])) {
-            return angular.isFunction(configObj) ?
+            return angular.isFunction(configObj)||angular.isArray(configObj) ?
                 [configObj] :
                 flattenKeyValue(configObj).filter(function (v) {
                     return v.key === 'default' || element.is(v.key);
