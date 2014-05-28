@@ -81,7 +81,7 @@
     aoc.service('aocConfigure', function () {
         return function (config) {
             angular.forEach(config, function (cfg, control) {
-                configs[control] = cfg;
+                angular.extend(configs[control]||(configs[control]={}),cfg)
             });
         }
     });
